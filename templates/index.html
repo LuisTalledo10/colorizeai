@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ColorizeAI - Restauración Automática de Fotografías Históricas</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container nav-container">
+        <div class="logo">ColorizeAI</div>
+        <ul class="nav-menu">
+          <li><a href="#proyecto">Proyecto</a></li>
+          <li><a href="#tecnologia">Tecnología</a></li>
+          <li><a href="#demo">Demo</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="container">
+        <h1 class="hero-title">Restauración Automática de Fotografías Históricas</h1>
+        <p class="hero-subtitle">Sistema de Deep Learning para colorización automática de imágenes en escala de grises</p>
+        <a href="#demo" class="cta-button">Probar Demo</a>
+      </div>
+    </header>
+
+    <section id="proyecto" class="section">
+      <div class="container">
+        <h2 class="section-title">Acerca del Proyecto</h2>
+        <div class="project-grid">
+          <div class="project-card">
+            <h3>Problema</h3>
+            <p>Las fotografías históricas en blanco y negro representan un patrimonio cultural invaluable, pero su naturaleza monocromática limita su impacto visual y emocional. Este proyecto aborda la restauración digital mediante redes neuronales convolucionales profundas.</p>
+          </div>
+          <div class="project-card">
+            <h3>Objetivo</h3>
+            <p>Desarrollar un modelo de deep learning capaz de colorear automáticamente imágenes en escala de grises, preservando detalles y aplicando colores realistas basados en patrones aprendidos de más de 200,000 imágenes.</p>
+          </div>
+          <div class="project-card">
+            <h3>Aplicación</h3>
+            <p>Restauración de retratos históricos familiares, digitalización de archivos fotográficos y preservación del patrimonio visual con técnicas de inteligencia artificial de última generación.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tecnologia" class="section tech-section">
+      <div class="container">
+        <h2 class="section-title">Tecnología y Metodología</h2>
+        <div class="tech-content">
+          <div class="tech-item">
+            <h3>Arquitectura</h3>
+            <p>U-Net con skip connections para preservar detalles espaciales y reconstrucción precisa de la información cromática.</p>
+          </div>
+          <div class="tech-item">
+            <h3>Dataset</h3>
+            <p>Entrenado con CelebA (202,599 imágenes) más dataset complementario de rostros (715 imágenes) para maximizar la diversidad y precisión.</p>
+          </div>
+          <div class="tech-item">
+            <h3>Modelos Disponibles</h3>
+            <ul class="model-list">
+              <li><strong>U-Net Básica:</strong> Arquitectura fundamental con resultados consistentes</li>
+              <li><strong>U-Net Mejorada:</strong> Optimizaciones adicionales para mayor detalle</li>
+              <li><strong>RMSprop (Recomendado):</strong> Mejor rendimiento en PSNR y SSIM</li>
+            </ul>
+          </div>
+          <div class="tech-item">
+            <h3>Evaluación</h3>
+            <p>Métricas cuantitativas (PSNR, SSIM) y evaluación visual cualitativa para garantizar resultados de alta calidad.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo" class="section demo-section">
+      <div class="container">
+        <h2 class="section-title">Demo Interactiva</h2>
+        <p class="demo-description">Sube una fotografía en blanco y negro para ver la colorización automática en acción</p>
+        
+        <div class="demo-grid">
+          <div class="demo-upload">
+            <h3>Configuración</h3>
+            <div class="upload-area">
+              <input id="fileInput" type="file" accept="image/*" />
+              <label for="fileInput" class="file-label">Seleccionar imagen</label>
+            </div>
+            
+            <div class="model-selector">
+              <h4>Modelo de Colorización</h4>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="model" value="basica" {% if not models.basica %}disabled{% endif %}>
+                  <span>U-Net Básica</span>
+                  {% if not models.basica %}<span class="status-badge disabled">No disponible</span>{% endif %}
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="model" value="mejorada" {% if not models.mejorada %}disabled{% endif %}>
+                  <span>U-Net Mejorada</span>
+                  {% if not models.mejorada %}<span class="status-badge disabled">No disponible</span>{% endif %}
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="model" value="rmsprop" {% if not models.rmsprop %}disabled{% endif %} {% if models.rmsprop %}checked{% endif %}>
+                  <span>RMSprop</span>
+                  {% if models.rmsprop %}<span class="status-badge">Recomendado</span>{% else %}<span class="status-badge disabled">No disponible</span>{% endif %}
+                </label>
+              </div>
+            </div>
+
+            {% if not (models.basica or models.mejorada or models.rmsprop) %}
+            <div class="alert-box">
+              <p>Los modelos no están disponibles actualmente. Por favor, contacte al administrador.</p>
+            </div>
+            {% endif %}
+
+            <button id="goBtn" class="process-btn">Procesar Imagen</button>
+          </div>
+
+          <div class="demo-results">
+            <h3>Resultados</h3>
+            <div class="result-grid">
+              <div class="result-item">
+                <h4>Imagen Original</h4>
+                <div class="image-container">
+                  <img id="orig" src="" alt="Imagen original" />
+                  <div class="placeholder">Sube una imagen para comenzar</div>
+                </div>
+              </div>
+              <div class="result-item">
+                <h4>Imagen Coloreada</h4>
+                <div class="image-container">
+                  <img id="result" src="" alt="Resultado coloreado" />
+                  <div class="placeholder">El resultado aparecerá aquí</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container">
+        <p>ColorizeAI - Proyecto de Deep Learning para Restauración de Fotografías Históricas</p>
+        <p class="footer-tech">Desarrollado con TensorFlow, Keras y U-Net Architecture</p>
+      </div>
+    </footer>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
