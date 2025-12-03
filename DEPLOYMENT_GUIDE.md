@@ -49,7 +49,12 @@ Los 3 modelos (Básica: 10.6 MB, Mejorada: 88.4 MB, RMSprop: 59 MB) ya están en
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120`
 
-5. **NO** necesitas añadir variables de entorno (los modelos ya están en el repo)
+5. **IMPORTANTE - Añadir Variable de Entorno**:
+   - Click en "Advanced" o desplázate hacia abajo
+   - En "Environment Variables", añade:
+     - **Key**: `PYTHON_VERSION`
+     - **Value**: `3.11.10`
+   - Esto fuerza a Render a usar Python 3.11 (TensorFlow 2.13 no funciona con 3.13)
 
 6. Selecciona el plan **Free**
 
