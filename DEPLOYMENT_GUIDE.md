@@ -9,44 +9,26 @@
 5. NO inicialices con README, .gitignore o licencia (ya los tenemos)
 6. Haz clic en "Create repository"
 
-## 2. Conectar y Subir al Repositorio
+## 2. ✅ COMPLETADO - Repositorio ya está en GitHub
 
-Copia la URL de tu repositorio (ejemplo: `https://github.com/tu-usuario/colorizeai.git`)
+Tu código ya está subido a: **https://github.com/LuisTalledo10/colorizeai**
 
-Ejecuta en PowerShell:
+Los 3 modelos están incluidos en el repositorio (GitHub permite archivos < 100 MB).
+
+Para futuras actualizaciones:
 
 ```powershell
 cd d:\proyectos\backendbn
-
-# Conectar con tu repositorio de GitHub (reemplaza con tu URL)
-git remote add origin https://github.com/TU-USUARIO/TU-REPO.git
-
-# Subir el código
-git push -u origin main
+git add .
+git commit -m "Descripción de los cambios"
+git push
 ```
 
-## 3. Opciones para los Modelos .h5
+## 3. ✅ Modelos Incluidos en el Repositorio
 
-### Opción A: Incluir modelos en el repositorio (si son < 100 MB cada uno)
+Los 3 modelos (Básica: 10.6 MB, Mejorada: 88.4 MB, RMSprop: 59 MB) ya están en GitHub.
 
-Ya están incluidos en el commit. Simplemente verifica que se subieron correctamente.
-
-### Opción B: Usar almacenamiento externo (RECOMENDADO para modelos grandes)
-
-1. Elimina los modelos del repositorio:
-   ```powershell
-   git rm --cached *.h5
-   git commit -m "Remove large model files"
-   git push
-   ```
-
-2. Sube los modelos a un servicio cloud:
-   - **AWS S3**: Crea un bucket público y sube los 3 archivos .h5
-   - **Google Cloud Storage**: Similar, bucket público
-   - **Alternativa gratuita**: https://www.dropbox.com o Google Drive (asegúrate de obtener enlaces directos)
-
-3. Obtén la URL base de la carpeta (sin incluir el nombre del archivo)
-   Ejemplo: `https://mi-bucket.s3.amazonaws.com/models`
+**No necesitas configurar `MODEL_BASE_URL`** - los modelos se cargarán automáticamente desde el repositorio.
 
 ## 4. Desplegar en Render
 
@@ -56,7 +38,7 @@ Ya están incluidos en el commit. Simplemente verifica que se subieron correctam
 
 3. Conecta tu repositorio de GitHub:
    - Autoriza a Render para acceder a tu GitHub
-   - Selecciona el repositorio `colorizeai`
+   - Selecciona el repositorio **`LuisTalledo10/colorizeai`**
 
 4. Configuración del servicio:
    - **Name**: `colorizeai` (o el que prefieras)
@@ -67,11 +49,7 @@ Ya están incluidos en el commit. Simplemente verifica que se subieron correctam
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120`
 
-5. Variables de Entorno (si usaste Opción B para modelos):
-   - Haz clic en "Advanced"
-   - Añade variable de entorno:
-     - **Key**: `MODEL_BASE_URL`
-     - **Value**: `https://tu-bucket.s3.amazonaws.com/models` (tu URL)
+5. **NO** necesitas añadir variables de entorno (los modelos ya están en el repo)
 
 6. Selecciona el plan **Free**
 

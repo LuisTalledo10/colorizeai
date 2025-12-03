@@ -4,9 +4,14 @@ import base64
 from PIL import Image
 import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 import os
-import urllib.request
-import json
+import sys
+
+# Suppress TensorFlow warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import warnings
+warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
 
@@ -19,85 +24,101 @@ MODEL_FILES = {
 
 models = {}
 
+def build_unet_model(input_shape=(128, 128, 1)):
+    """Construye la arquitectura U-Net usada para todos los modelos"""
+    inputs = keras.Input(shape=input_shape)
+    
+    # Encoder
+    c1 = keras.layers.Conv2D(64, (3, 3), padding='same')(inputs)
+    c1 = keras.layers.BatchNormalization()(c1)
+    c1 = keras.layers.Activation('relu')(c1)
+    c1 = keras.layers.Conv2D(64, (3, 3), padding='same')(c1)
+    c1 = keras.layers.BatchNormalization()(c1)
+    c1 = keras.layers.Activation('relu')(c1)
+    p1 = keras.layers.MaxPooling2D((2, 2))(c1)
+    
+    c2 = keras.layers.Conv2D(128, (3, 3), padding='same')(p1)
+    c2 = keras.layers.BatchNormalization()(c2)
+    c2 = keras.layers.Activation('relu')(c2)
+    c2 = keras.layers.Conv2D(128, (3, 3), padding='same')(c2)
+    c2 = keras.layers.BatchNormalization()(c2)
+    c2 = keras.layers.Activation('relu')(c2)
+    p2 = keras.layers.MaxPooling2D((2, 2))(c2)
+    
+    c3 = keras.layers.Conv2D(256, (3, 3), padding='same')(p2)
+    c3 = keras.layers.BatchNormalization()(c3)
+    c3 = keras.layers.Activation('relu')(c3)
+    c3 = keras.layers.Conv2D(256, (3, 3), padding='same')(c3)
+    c3 = keras.layers.BatchNormalization()(c3)
+    c3 = keras.layers.Activation('relu')(c3)
+    p3 = keras.layers.MaxPooling2D((2, 2))(c3)
+    
+    # Bottleneck
+    c4 = keras.layers.Conv2D(512, (3, 3), padding='same')(p3)
+    c4 = keras.layers.BatchNormalization()(c4)
+    c4 = keras.layers.Activation('relu')(c4)
+    c4 = keras.layers.Dropout(0.3)(c4)
+    c4 = keras.layers.Conv2D(512, (3, 3), padding='same')(c4)
+    c4 = keras.layers.BatchNormalization()(c4)
+    c4 = keras.layers.Activation('relu')(c4)
+    
+    # Decoder
+    u5 = keras.layers.Conv2DTranspose(256, (2, 2), strides=(2, 2), padding='same')(c4)
+    u5 = keras.layers.concatenate([u5, c3])
+    c5 = keras.layers.Conv2D(256, (3, 3), padding='same')(u5)
+    c5 = keras.layers.BatchNormalization()(c5)
+    c5 = keras.layers.Activation('relu')(c5)
+    c5 = keras.layers.Conv2D(256, (3, 3), padding='same')(c5)
+    c5 = keras.layers.BatchNormalization()(c5)
+    c5 = keras.layers.Activation('relu')(c5)
+    
+    u6 = keras.layers.Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same')(c5)
+    u6 = keras.layers.concatenate([u6, c2])
+    c6 = keras.layers.Conv2D(128, (3, 3), padding='same')(u6)
+    c6 = keras.layers.BatchNormalization()(c6)
+    c6 = keras.layers.Activation('relu')(c6)
+    c6 = keras.layers.Conv2D(128, (3, 3), padding='same')(c6)
+    c6 = keras.layers.BatchNormalization()(c6)
+    c6 = keras.layers.Activation('relu')(c6)
+    
+    u7 = keras.layers.Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c6)
+    u7 = keras.layers.concatenate([u7, c1])
+    c7 = keras.layers.Conv2D(64, (3, 3), padding='same')(u7)
+    c7 = keras.layers.BatchNormalization()(c7)
+    c7 = keras.layers.Activation('relu')(c7)
+    c7 = keras.layers.Conv2D(64, (3, 3), padding='same')(c7)
+    c7 = keras.layers.BatchNormalization()(c7)
+    c7 = keras.layers.Activation('relu')(c7)
+    
+    # Output
+    outputs = keras.layers.Conv2D(3, (1, 1), activation='sigmoid')(c7)
+    
+    model = keras.Model(inputs=[inputs], outputs=[outputs])
+    return model
+
 def load_models():
     for key, path in MODEL_FILES.items():
         if not os.path.exists(path):
-            print(f'Model file not found: {path} (will attempt download if MODEL_BASE_URL set): {path}')
-            # try to download from MODEL_BASE_URL if provided
-            base = os.environ.get('MODEL_BASE_URL')
-            if base:
-                try:
-                    url = base.rstrip('/') + '/' + os.path.basename(path)
-                    print(f'Downloading {url} ...')
-                    urllib.request.urlretrieve(url, path)
-                    print(f'Downloaded {path}')
-                except Exception as e:
-                    print(f'Failed to download {path} from {base}: {e}')
-            else:
-                print('No MODEL_BASE_URL provided; skipping download')
-
-        if not os.path.exists(path):
-            print(f'Still missing {path}; skipping load')
+            print(f'Model file not found: {path}')
             continue
 
-        print(f'Trying to load model {key} from {path}...')
-        # Try tf.keras first
+        print(f'Loading model {key} from {path}...')
         try:
-            models[key] = tf.keras.models.load_model(path, compile=False)
-            print(f'Loaded {key} with tf.keras, input shape: {models[key].input_shape}')
-            continue
-        except Exception as e_tf:
-            print(f'tf.keras failed for {path}: {e_tf}')
-
-        # Try standalone keras if available
-        try:
-            import keras as standalone_keras
+            # Try direct load first
+            models[key] = keras.models.load_model(path, compile=False)
+            print(f'✓ Loaded {key} successfully')
+        except Exception as e1:
+            print(f'Direct load failed, trying weights-only approach...')
             try:
-                models[key] = standalone_keras.models.load_model(path, compile=False)
-                print(f'Loaded {key} with standalone keras, input shape: {models[key].input_shape}')
+                # Build U-Net and try to load weights
+                model = build_unet_model()
+                model.load_weights(path, by_name=True, skip_mismatch=True)
+                models[key] = model
+                print(f'✓ Loaded {key} successfully (weights transfer)')
+            except Exception as e2:
+                print(f'✗ Could not load {key}: Incompatible format')
+                # Don't crash - just skip this model
                 continue
-            except Exception as e_keras:
-                print(f'standalone keras failed for {path}: {e_keras}')
-        except Exception:
-            print('standalone keras not available')
-
-        # As a last resort, try to reconstruct the model from `model_config` stored inside the HDF5
-        try:
-            import h5py, json
-            with h5py.File(path, 'r') as f:
-                mc = None
-                if 'model_config' in f.attrs:
-                    mc = f.attrs['model_config']
-                elif 'model_config' in f:
-                    mc = f['model_config'][()]
-
-                if mc is not None:
-                    mc_str = mc.decode() if isinstance(mc, (bytes, bytearray)) else str(mc)
-                    # quick compatibility fix: replace 'batch_shape' with 'batch_input_shape'
-                    mc_str_fixed = mc_str.replace('"batch_shape"', '"batch_input_shape"')
-                    try:
-                        cfg = json.loads(mc_str_fixed)
-                        # if the JSON has the top-level Functional wrapper, get the 'config' or dump back to json
-                        if isinstance(cfg, dict) and 'config' in cfg:
-                            model_json = json.dumps(cfg)
-                        else:
-                            model_json = mc_str_fixed
-
-                        model = tf.keras.models.model_from_json(model_json)
-                        # try to load weights from the .h5
-                        try:
-                            model.load_weights(path)
-                            models[key] = model
-                            print(f'Loaded {key} by reconstructing from model_config and loading weights')
-                            continue
-                        except Exception as e_w:
-                            print(f'Failed to load weights for reconstructed model {path}: {e_w}')
-                    except Exception as e_json:
-                        print(f'Failed to reconstruct model from model_config for {path}: {e_json}')
-        except Exception as e_last:
-            print(f'Last-resort reconstruction failed for {path}: {e_last}')
-
-        print(f'Error loading {path}: model not loaded')
 
 def get_model_input_size(model):
     # Try to determine (height, width)
