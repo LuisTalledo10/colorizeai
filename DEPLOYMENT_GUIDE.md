@@ -72,11 +72,22 @@ Los 3 modelos (Básica: 10.6 MB, Mejorada: 88.4 MB, RMSprop: 59 MB) ya están en
 
 ## Solución de Problemas
 
+### ✅ RESUELTO: Error "No matching distribution found for tensorflow"
+
+**Causa**: Render usaba Python 3.13 por defecto, pero TensorFlow 2.13 solo funciona con Python 3.11.
+
+**Solución**: Se añadió `runtime.txt` al repositorio especificando `python-3.11.10`.
+
 ### Si el despliegue falla:
 
-1. **Error de memoria**: Usa el plan de pago de Render con más RAM
-2. **Timeout al cargar modelos**: Asegúrate de que `MODEL_BASE_URL` esté configurado correctamente
-3. **Errores de dependencias**: Verifica que `requirements.txt` esté actualizado
+1. **Error de memoria**: Los modelos requieren ~512 MB RAM. Render Free Tier tiene 512 MB, debería funcionar.
+2. **Modelos no cargan**: Verifica en los logs que aparezcan las líneas:
+   ```
+   ✓ Loaded basica successfully (weights transfer)
+   ✓ Loaded mejorada successfully (weights transfer)
+   ✓ Loaded rmsprop successfully (weights transfer)
+   ```
+3. **Errores de dependencias**: Verifica que `requirements.txt` y `runtime.txt` estén en el repo.
 
 ### Logs en Render:
 
